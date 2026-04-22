@@ -1,0 +1,49 @@
+services:
+  # 1. Config Server: El cerebro que sabe dónde está cada dato
+  configsvr:
+    image: mongo:latest
+    container_name: mongo-config
+    command: mongod --configsvr --replSet rs-config --port 27017 --bind_ip_all
+    ports:
+      - "27019:27017"
+
+  # 2. Shard 1: Primer servidor de almacenamiento
+  shard1:
+    image: mongo:latest
+    container_name: mongo-shard1
+    command: mongod --shardsvr --replSet rs-shard1 --port 27017 --bind_ip_all
+    ports:
+      - "27021:27017"
+
+# 4. Shard 2: Segundo servidor de datos
+  shard2:
+    image: mongo:latest
+    container_name: mongo-shard2
+    command: mongod --shardsvr --replSet rs-shard2 --port 27017 --bind_ip_all
+    ports:
+      - "27022:27017"
+
+  shard3:
+    image: mongo:latest
+    container_name: mongo-shard3
+    command: mongod --shardsvr --replSet rs-shard3 --port 27017 --bind_ip_all
+    ports:
+      - "27023:27017"
+
+
+  # 3. Mongos (Router): Por donde entrará JMeter y Python
+  mongos:
+    image: mongo:latest
+    container_name: mongo-router
+    depends_on:
+      - configsvr
+      - shard1
+    command: mongos --configdb rs-config/configsvr:27017 --port 27017 --bind_ip_all
+    ports:
+      - "27020:27017"
+
+  mongo-standalone:
+    image: mongo:latest
+    container_name: mongo-standalone
+    ports:
+      - "27018:27017"      
